@@ -1,65 +1,57 @@
-extends Node2D
+extends Node
 
 @onready var cursor := %Cursor as Sprite2D
 @onready var place_building_button := %PlaceBuildingButton as Button
-@onready var highlight_tilemap_layer := %HighlightTileMapLayer as TileMapLayer
+@onready var grid_manager := %GridManager as GridManager
 
 var building_scene := preload("res://scenes/building/building.tscn")
-var hovered_grid_cell := Vector2.INF
+var hovered_grid_cell := Vector2i.MIN
 
 
 func _ready() -> void:
-  place_building_button.pressed.connect(_on_button_pressed)
+	place_building_button.pressed.connect(_on_button_pressed)
 
-  cursor.visible = false
+	cursor.visible = false
 
 
 func _process(_delta: float) -> void:
-  var current_grid_cell := _get_mouse_grid_cell_position()
+	var current_grid_cell := grid_manager.get_mouse_grid_cell_position()
 
-  cursor.global_position = current_grid_cell * 64
+	cursor.global_position = current_grid_cell * 64.0
 
-  if cursor.visible and \
-      (not _is_hovering_cell() or hovered_grid_cell != current_grid_cell):
+	if cursor.visible and \
+		(not _is_hovering_cell() or hovered_grid_cell != current_grid_cell):
 
-    hovered_grid_cell = current_grid_cell
-    _update_highlight_tilemap_layer()
+		hovered_grid_cell = current_grid_cell
+		grid_manager.highlight_valid_tiles_in_radius(hovered_grid_cell, 3)
 
 
 func _unhandled_input(event: InputEvent) -> void:
-  if cursor.visible and event.is_action_pressed("left_click"):
-    _place_building_at_mouse_position()
-    cursor.visible = false
+	if _is_hovering_cell() \
+	and event.is_action_pressed("left_click") \
+	and grid_manager.is_tile_position_valid(hovered_grid_cell):
+		_place_building_at_hovered_cell_position()
+		cursor.visible = false
 
 
 func _on_button_pressed() -> void:
-  cursor.visible = true
+	cursor.visible = true
 
 
 func _is_hovering_cell() -> bool:
-  return hovered_grid_cell != Vector2.INF
+	return hovered_grid_cell != Vector2i.MIN
 
 
-func _update_highlight_tilemap_layer() -> void:
-  highlight_tilemap_layer.clear()
+func _place_building_at_hovered_cell_position() -> void:
+	if not _is_hovering_cell():
+		push_warning("not hovering cell")
+		return
 
-  if not _is_hovering_cell():
-    return
+	var building := building_scene.instantiate() as Node2D
+	add_child(building)
 
-  for x in range(hovered_grid_cell.x - 3, hovered_grid_cell.x + 4):
-    for y in range(hovered_grid_cell.y - 3, hovered_grid_cell.y + 4):
-      highlight_tilemap_layer.set_cell(Vector2i(x, y), 0, Vector2i.ZERO)
+	building.global_position = hovered_grid_cell * 64.0
+	grid_manager.mark_tile_as_occupied(hovered_grid_cell)
 
-
-func _get_mouse_grid_cell_position() -> Vector2:
-  return (get_global_mouse_position() / 64).floor()
-
-
-func _place_building_at_mouse_position() -> void:
-  var building := building_scene.instantiate() as Node2D
-  add_child(building)
-
-  building.global_position = _get_mouse_grid_cell_position() * 64
-
-  hovered_grid_cell = Vector2.INF
-  _update_highlight_tilemap_layer()
+	hovered_grid_cell = Vector2i.MIN
+	grid_manager.clear_highlighted_tiles()
