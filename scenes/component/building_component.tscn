@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://vroelpag3gfi"]
+
+[ext_resource type="Script" path="res://scenes/component/building_component.gd" id="1_kypjb"]
+
+[node name="BuildingComponent" type="Node2D"]
+script = ExtResource("1_kypjb")

@@ -1,8 +1,11 @@
-[gd_scene load_steps=2 format=3 uid="uid://du611u08wwjpm"]
+[gd_scene load_steps=3 format=3 uid="uid://du611u08wwjpm"]
 
 [ext_resource type="Texture2D" uid="uid://qo80amiutk5j" path="res://assets/buildings/tower_blue.png" id="1_p8kb3"]
+[ext_resource type="PackedScene" uid="uid://vroelpag3gfi" path="res://scenes/component/building_component.tscn" id="1_w5gdm"]
 
 [node name="Building" type="Node2D"]
+
+[node name="BuildingComponent" parent="." instance=ExtResource("1_w5gdm")]
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("1_p8kb3")

@@ -23,13 +23,13 @@ func _process(_delta: float) -> void:
 		(not _is_hovering_cell() or hovered_grid_cell != current_grid_cell):
 
 		hovered_grid_cell = current_grid_cell
-		grid_manager.highlight_valid_tiles_in_radius(hovered_grid_cell, 3)
+		grid_manager.highlight_buildable_tiles()
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _is_hovering_cell() \
 	and event.is_action_pressed("left_click") \
-	and grid_manager.is_tile_position_valid(hovered_grid_cell):
+	and grid_manager.is_tile_position_buildable(hovered_grid_cell):
 		_place_building_at_hovered_cell_position()
 		cursor.visible = false
 
@@ -44,14 +44,13 @@ func _is_hovering_cell() -> bool:
 
 func _place_building_at_hovered_cell_position() -> void:
 	if not _is_hovering_cell():
-		push_warning("not hovering cell")
+		push_warning("not hovering a cell")
 		return
 
 	var building := building_scene.instantiate() as Node2D
 	add_child(building)
 
 	building.global_position = hovered_grid_cell * 64.0
-	grid_manager.mark_tile_as_occupied(hovered_grid_cell)
 
 	hovered_grid_cell = Vector2i.MIN
 	grid_manager.clear_highlighted_tiles()

@@ -5,34 +5,29 @@ class_name GridManager
 @export var base_terrain_tilemap: TileMapLayer
 
 ## TODO: supply type in 4.4
-var occupied_cells: Dictionary = {}
+## var valid_buildable_tiles: Dictionary[Vector2i, bool] = {}
+var valid_buildable_tiles: Dictionary = {}
+
+
+func _ready() -> void:
+	GameEvents.building_placed.connect(_on_building_placed)
+
 
 func is_tile_position_valid(tile_position: Vector2i) -> bool:
 	var custom_data := base_terrain_tilemap.get_cell_tile_data(tile_position)
 	if not custom_data:
 		return false
 
-	if not (custom_data.get_custom_data("buildable") as bool):
-		return false
-
-	return not occupied_cells.has(tile_position)
+	return custom_data.get_custom_data("buildable") as bool
 
 
-func mark_tile_as_occupied(tile_position: Vector2i) -> void:
-	occupied_cells[tile_position] = true
+func is_tile_position_buildable(tile_position: Vector2i) -> bool:
+	return valid_buildable_tiles.has(tile_position)
 
 
-func highlight_valid_tiles_in_radius(root_cell: Vector2i, radius: int) -> void:
-	clear_highlighted_tiles()
-
-	for x in range(root_cell.x - radius, root_cell.x + radius + 1):
-		for y in range(root_cell.y - radius, root_cell.y + radius + 1):
-			var current_cell := Vector2i(x, y)
-
-			if not is_tile_position_valid(current_cell):
-				continue
-
-			highlight_tilemap.set_cell(current_cell, 0, Vector2i.ZERO)
+func highlight_buildable_tiles() -> void:
+	for tile_position in valid_buildable_tiles:
+		highlight_tilemap.set_cell(tile_position, 0, Vector2i.ZERO)
 
 
 func get_mouse_grid_cell_position() -> Vector2i:
@@ -41,3 +36,28 @@ func get_mouse_grid_cell_position() -> Vector2i:
 
 func clear_highlighted_tiles() -> void:
 	highlight_tilemap.clear()
+
+
+func _update_valid_buildable_tiles(component: BuildingComponent) -> void:
+	if not component:
+		push_error("building component doesn't exist!")
+		return
+	
+	var root_cell := component.get_grid_cell_position()
+	var radius := component.buildable_radius
+
+	for x in range(root_cell.x - radius, root_cell.x + radius + 1):
+		for y in range(root_cell.y - radius, root_cell.y + radius + 1):
+			var current_cell := Vector2i(x, y)
+
+			if not is_tile_position_valid(current_cell):
+				continue
+
+			valid_buildable_tiles[current_cell] = true
+	valid_buildable_tiles.erase(root_cell)
+
+func _on_building_placed(component: BuildingComponent) -> void:
+	if not component:
+		push_error("building component doesn't exist!")
+		return
+	_update_valid_buildable_tiles(component)
