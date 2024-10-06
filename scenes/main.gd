@@ -1,8 +1,9 @@
 extends Node
 
-@onready var cursor := %Cursor as Sprite2D
-@onready var place_building_button := %PlaceBuildingButton as Button
-@onready var grid_manager := %GridManager as GridManager
+@onready var cursor: Sprite2D = %Cursor
+@onready var place_building_button: Button = %PlaceBuildingButton
+@onready var grid_manager: GridManager = %GridManager
+@onready var y_sort_root: Node2D = %YSortRoot
 
 var building_scene := preload("res://scenes/building/building.tscn")
 var hovered_grid_cell := Vector2i.MIN
@@ -15,40 +16,41 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	var current_grid_cell := grid_manager.get_mouse_grid_cell_position()
+	var current_grid_cell := grid_manager.get_mouse_tile_position()
 
 	cursor.global_position = current_grid_cell * 64.0
 
 	if cursor.visible and \
-		(not _is_hovering_cell() or hovered_grid_cell != current_grid_cell):
+		(not _is_hovering_tile() or hovered_grid_cell != current_grid_cell):
 
 		hovered_grid_cell = current_grid_cell
-		grid_manager.highlight_buildable_tiles()
+		grid_manager.highlight_expanded_buildable_tiles(hovered_grid_cell, 3)
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _is_hovering_cell() \
+	if _is_hovering_tile() \
 	and event.is_action_pressed("left_click") \
 	and grid_manager.is_tile_position_buildable(hovered_grid_cell):
-		_place_building_at_hovered_cell_position()
+		_place_building_at_hovered_tile_position()
 		cursor.visible = false
 
 
 func _on_button_pressed() -> void:
 	cursor.visible = true
+	grid_manager.highlight_buildable_tiles()
 
 
-func _is_hovering_cell() -> bool:
+func _is_hovering_tile() -> bool:
 	return hovered_grid_cell != Vector2i.MIN
 
 
-func _place_building_at_hovered_cell_position() -> void:
-	if not _is_hovering_cell():
-		push_warning("not hovering a cell")
+func _place_building_at_hovered_tile_position() -> void:
+	if not _is_hovering_tile():
+		push_warning("not hovering a tile")
 		return
 
-	var building := building_scene.instantiate() as Node2D
-	add_child(building)
+	var building: Node2D = building_scene.instantiate()
+	y_sort_root.add_child(building)
 
 	building.global_position = hovered_grid_cell * 64.0
 
