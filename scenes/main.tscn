@@ -44,10 +44,18 @@ unique_name_in_owner = true
 texture = SubResource("PlaceholderTexture2D_kmjkd")
 centered = false
 
-[node name="PlaceBuildingButton" type="Button" parent="."]
+[node name="PlaceTowerButton" type="Button" parent="."]
 unique_name_in_owner = true
 offset_left = 5.0
 offset_top = 684.0
 offset_right = 121.0
 offset_bottom = 715.0
-text = "Place building"
+text = "Place tower"
+
+[node name="PlaceVillageButton" type="Button" parent="."]
+unique_name_in_owner = true
+offset_left = 133.0
+offset_top = 684.0
+offset_right = 249.0
+offset_bottom = 715.0
+text = "Place village"

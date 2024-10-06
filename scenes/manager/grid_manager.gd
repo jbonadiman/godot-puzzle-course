@@ -13,9 +13,9 @@ func _ready() -> void:
 	GameEvents.building_placed.connect(_on_building_placed)
 	assert(base_terrain_tile_map, "'base_terrain_tile_map' not defined in the editor!")
 	assert(highlight_tile_map, "'highlight_tile_map' not defined in the editor!")
-	
+
 	all_tile_map_layers = _get_all_tile_map_layers(base_terrain_tile_map)
-	
+
 	for layer in all_tile_map_layers:
 		print(layer.name)
 
@@ -27,7 +27,7 @@ func is_tile_position_valid(tile_position: Vector2i) -> bool:
 		if not custom_data:
 			continue
 		return custom_data.get_custom_data("buildable") as bool
-	
+
 	return false
 
 func is_tile_position_buildable(tile_position: Vector2i) -> bool:
@@ -42,21 +42,21 @@ func highlight_buildable_tiles() -> void:
 func highlight_expanded_buildable_tiles(root_cell: Vector2i, radius: int) -> void:
 	clear_highlighted_tiles()
 	highlight_buildable_tiles()
-	
+
 	var valid_tiles := _get_valid_tiles_in_radius(root_cell, radius)
 	var occupied_tiles := _get_occupied_tiles()
-	
+
 	var expanded_tiles := valid_tiles \
 		.filter(
 			func(tile: Vector2i): return not valid_buildable_tiles.has(tile)) \
 		.filter(
 			func(tile: Vector2i): return not occupied_tiles.has(tile))
-	
+
 	const ATLAS_COORD := Vector2i(1, 0)
 	for tile_position in expanded_tiles:
 		highlight_tile_map.set_cell(tile_position, 0, ATLAS_COORD)
 
- 
+
 func get_mouse_tile_position() -> Vector2i:
 	return Vector2i(
 		(highlight_tile_map.get_global_mouse_position() / 64).floor())
@@ -70,12 +70,12 @@ func _update_valid_buildable_tiles(component: BuildingComponent) -> void:
 	if not component:
 		push_error("building component doesn't exist!")
 		return
-	
+
 	var root_cell := component.get_grid_cell_position()
-	
+
 	var valid_tiles := _get_valid_tiles_in_radius(
 		root_cell,
-		component.buildable_radius)
+		component.building_resource.buildable_radius)
 
 	for tile: Vector2i in valid_tiles:
 		valid_buildable_tiles[tile] = true
@@ -88,11 +88,11 @@ func _get_all_tile_map_layers(root_layer: TileMapLayer) -> Array[TileMapLayer]:
 	if not root_layer:
 		push_error("root layer is null!")
 		return []
-	
+
 	var result: Array[TileMapLayer]
 	var children: Array[Node] = root_layer.get_children()
 	children.reverse()
-	
+
 	var child_layer: TileMapLayer
 	for child: Node in children:
 		child_layer = child as TileMapLayer
