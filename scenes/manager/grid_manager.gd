@@ -4,10 +4,14 @@ class_name GridManager
 @export var highlight_tile_map: TileMapLayer
 @export var base_terrain_tile_map: TileMapLayer
 
+const IS_BUILDABLE := "is_buildable"
+const IS_WOOD := "is_wood"
+
 ## TODO: supply type in 4.4
 ## var valid_buildable_tiles: Dictionary[Vector2i, bool] = {}
 var valid_buildable_tiles: Dictionary = {}
 var all_tile_map_layers: Array[TileMapLayer] = []
+
 
 func _ready() -> void:
 	GameEvents.building_placed.connect(_on_building_placed)
@@ -20,15 +24,16 @@ func _ready() -> void:
 		print(layer.name)
 
 
-func is_tile_position_valid(tile_position: Vector2i) -> bool:
+func tile_has_custom_data(tile_position: Vector2i, data: String) -> bool:
 	var custom_data: TileData
 	for layer: TileMapLayer in all_tile_map_layers:
 		custom_data = layer.get_cell_tile_data(tile_position)
 		if not custom_data:
 			continue
-		return custom_data.get_custom_data("buildable") as bool
+		return custom_data.get_custom_data(data) as bool
 
 	return false
+
 
 func is_tile_position_buildable(tile_position: Vector2i) -> bool:
 	return valid_buildable_tiles.has(tile_position)
@@ -39,8 +44,16 @@ func highlight_buildable_tiles() -> void:
 		highlight_tile_map.set_cell(tile_position, 0, Vector2i.ZERO)
 
 
+func highlight_resource_tiles(root_cell: Vector2i, radius: int) -> void:
+	var resource_tiles: Array[Vector2i] = \
+		_get_resource_tiles_in_radius(root_cell, radius)
+
+	const ATLAS_COORD := Vector2i(1, 0)
+	for tile_position in resource_tiles:
+		highlight_tile_map.set_cell(tile_position, 0, ATLAS_COORD)
+
+
 func highlight_expanded_buildable_tiles(root_cell: Vector2i, radius: int) -> void:
-	clear_highlighted_tiles()
 	highlight_buildable_tiles()
 
 	var valid_tiles := _get_valid_tiles_in_radius(root_cell, radius)
@@ -101,6 +114,7 @@ func _get_all_tile_map_layers(root_layer: TileMapLayer) -> Array[TileMapLayer]:
 	result.push_back(root_layer)
 	return result
 
+
 func _get_occupied_tiles() -> Array[Vector2i]:
 	var result: Array[Vector2i]
 	result.assign(get_tree() \
@@ -112,17 +126,35 @@ func _get_occupied_tiles() -> Array[Vector2i]:
 	return result
 
 
-func _get_valid_tiles_in_radius(root_cell: Vector2i, radius: int) -> Array[Vector2i]:
+func _get_tiles_in_radius(
+	root_cell: Vector2i,
+	radius: int,
+	tile_predicate: Callable) -> Array[Vector2i]:
+
 	var result: Array[Vector2i] = []
 	for x: int in range(root_cell.x - radius, root_cell.x + radius + 1):
 		for y: int in range(root_cell.y - radius, root_cell.y + radius + 1):
 			var current_cell := Vector2i(x, y)
 
-			if not is_tile_position_valid(current_cell):
+			if not tile_predicate.call(current_cell):
 				continue
 
 			result.push_back(current_cell)
 	return result
+
+
+func _get_valid_tiles_in_radius(root_cell: Vector2i, radius: int) -> Array[Vector2i]:
+	return _get_tiles_in_radius(
+		root_cell,
+		radius,
+		func(tile: Vector2i): return tile_has_custom_data(tile, IS_BUILDABLE))
+
+
+func _get_resource_tiles_in_radius(root_cell: Vector2i, radius: int) -> Array[Vector2i]:
+	return _get_tiles_in_radius(
+		root_cell,
+		radius,
+		func(tile: Vector2i): return tile_has_custom_data(tile, IS_WOOD))
 
 
 func _on_building_placed(component: BuildingComponent) -> void:

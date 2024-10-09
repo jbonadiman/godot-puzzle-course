@@ -32,9 +32,15 @@ func _process(_delta: float) -> void:
 		(not _is_hovering_tile() or hovered_grid_cell != current_grid_cell):
 
 		hovered_grid_cell = current_grid_cell
+		grid_manager.clear_highlighted_tiles()
+
 		grid_manager.highlight_expanded_buildable_tiles(
 			hovered_grid_cell,
 			to_be_placed_resource.buildable_radius)
+
+		grid_manager.highlight_resource_tiles(
+			hovered_grid_cell,
+			to_be_placed_resource.resource_radius)
 
 
 func _unhandled_input(event: InputEvent) -> void:
